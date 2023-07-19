@@ -7,6 +7,8 @@ from rest_framework import status
 
 
 CREATE_USER_URL = reverse('users:create')
+TOKEN_URL = reverse('users:token')
+ME_URL = reverse('users:me')
 
 def create_user(**params):
     """this is helper function for our tests basicly we shorten the function that we already have with this"""
@@ -49,7 +51,75 @@ class PublicUserApiTests(TestCase):
                                 email=payload['email']).exists()
         self.assertFalse(user_exist)
 
+    def test_token_created_for_user(self):
+        """test that then auth token is created"""
+        payload = {'email' : 'behnam@gmail.com', 'password': 'test123'}
+        create_user(**payload)
+        res = self.client.post(TOKEN_URL, payload)
+        self.assertIn('token', res.data)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+    
+    def test_create_user_with_invalid_cridential(self):
+        """test that the provided information for login is invalid"""
+        create_user(email='behnam@gmail.com', password='q3dfsssf')
+        payload ={'email': 'behnam@gmail.com', 'password':'test123'}
+        res = self.client.post(TOKEN_URL,payload)
+        self.assertNotIn('token',res.data)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    def test_user_dont_exists(self):
+        """test if the user dont exist then the token shouldnt be in our request"""
+        payload = {'email':'behnam@test.com', 'password':'test'}
+        res = self.client.post(TOKEN_URL, payload)
+        self.assertNotIn('token', res.data)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    def test_createuser_with_missing_field(self):
+        """test that the required field are in the data"""
+        res = self.client.post(TOKEN_URL,{'email':'one','password':''})
+        self.assertNotIn('token', res.data)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+class PrivateUserApiTest(TestCase):
+    """for testing app function when the user is authenticated"""
 
-  
+    def setUp(self):
+        """for setting some default init testing"""
+        self.user= create_user(
+            email = 'behnam@test.com',
+            password = 'test',
+            name= 'behnam'
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+    
+    def test_retrieve_profile_success(self):
+        """Test retrieving profile for logged in used"""
+        res = self.client.get(ME_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, {
+            'name': self.user.name,
+            'email': self.user.email
+        })
+
+    def test_post_me_not_allowed(self):
+        """Test that POST is not allowed on the me url"""
+        res = self.client.post(ME_URL, {})
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_update_user_profile(self):
+        """Test updating the user profile for authenticated user"""
+        payload = {'name': 'new name', 'password': 'newpassword123'}
+
+        res = self.client.patch(ME_URL, payload)
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.name, payload['name'])
+        self.assertTrue(self.user.check_password(payload['password']))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        
