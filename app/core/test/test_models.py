@@ -1,5 +1,11 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from core import models
+
+def sample_user(email='test@test.com', password='test123'):
+    """sample user for testing purposes"""
+    return get_user_model().objects.create_user(email, password)
+
 
 class UserTests(TestCase):
 
@@ -9,8 +15,8 @@ class UserTests(TestCase):
         password = "1234"
 
         user = get_user_model().objects.create_user(
-            email = email,
-            password = password
+            email=email,
+            password=password
         )
 
         self.assertEqual(user.email, email)
@@ -26,17 +32,24 @@ class UserTests(TestCase):
         """If the user want to create with no email must raise a value error"""
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(None, 'test123')
-    
+
     def test_create_new_superuser(self):
         """For creating new superuser"""
         email = "behnam@gmail.com"
         password = "1234"
 
         user = get_user_model().objects.create_superuser(
-            email = email,
-            password = password
+            email=email,
+            password=password
         )
 
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_active)
-
+    
+    def test_tag_string(self):
+        """if the tag is showing the string representaion"""
+        tag = models.Tag.objects.create(
+            user = sample_user(),
+            name = 'test_tag'
+        )
+        self.assertEqual(str(tag),tag.name)
