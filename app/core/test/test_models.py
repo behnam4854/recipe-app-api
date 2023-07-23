@@ -53,3 +53,12 @@ class UserTests(TestCase):
             name = 'test_tag'
         )
         self.assertEqual(str(tag),tag.name)
+
+    def test_ingridient_string(self):
+        """test if the string representation is currect"""
+        ingredient = models.Ingredient.objects.create(
+            user = sample_user(),
+            name = "test ingredient"
+        )
+
+        self.assertEqual(str(ingredient),ingredient.name)
