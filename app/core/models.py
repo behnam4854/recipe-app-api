@@ -49,3 +49,19 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return self.name
+
+class Recipe(models.Model):
+    """recipe the main thing we are talking about:))"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    title = models.CharField(max_length=256)
+    time_minutes = models.IntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=0)
+    link = models.CharField(max_length=256,blank=True)
+    ingredients = models.ManyToManyField('Ingredient')
+    tags = models.ManyToManyField('Tag')
+
+    def __str__(self):
+        return self.title
