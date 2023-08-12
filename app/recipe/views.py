@@ -41,7 +41,6 @@ class IngredintViewSet(viewsets.GenericViewSet,
 
 class RecipeViewset(viewsets.ModelViewSet):
     """manage recipes in the dataabase"""
-
     serializer_class = serializers.RecipeSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
@@ -50,5 +49,13 @@ class RecipeViewset(viewsets.ModelViewSet):
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
     
-
+    def get_serializer_class(self):
+        """return the needed serializer"""
+        if self.action == 'retrieve':
+            return serializers.RecipeDetailSerialzer
+        
+        return self.serializer_class
     
+    def perform_create(self, serializer):
+       """Create new recipe"""
+       serializer.save(user=self.request.user)
